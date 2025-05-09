@@ -3,6 +3,7 @@ import { WebSocketServer } from "ws";
 import http from "http";
 import WebSocket from "ws";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 const app = express();
@@ -26,12 +27,14 @@ wss.on("connection", (exotelSocket) => {
     console.log("🤖 Connected to Retell");
   });
 
+  // Exotel → Retell
   exotelSocket.on("message", (msg) => {
     if (retellSocket.readyState === WebSocket.OPEN) {
       retellSocket.send(msg);
     }
   });
 
+  // Retell → Exotel
   retellSocket.on("message", (msg) => {
     if (exotelSocket.readyState === WebSocket.OPEN) {
       exotelSocket.send(msg);
@@ -42,6 +45,7 @@ wss.on("connection", (exotelSocket) => {
   retellSocket.on("close", () => exotelSocket.close());
 });
 
+// ✅ /start endpoint used by Exotel Voicebot Applet
 app.get("/start", (req, res) => {
   res.json({
     url: `wss://${req.headers.host}`,
@@ -49,6 +53,11 @@ app.get("/start", (req, res) => {
       Authorization: `Bearer ${RETELL_KEY}`
     }
   });
+});
+
+// ✅ Root route for testing ngrok connection
+app.get("/", (req, res) => {
+  res.send("✅ Retell-Exotel WebSocket bridge is live.");
 });
 
 server.listen(PORT, () => {
